@@ -1,8 +1,8 @@
 import os
 import sys
 import logging
-import requests
 from datetime import datetime, timezone
+from curl_cffi import requests as curl_requests
 
 # Allow imports from project root (utils/)
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -50,26 +50,34 @@ def fetch_posts() -> list[dict]:
         List of raw post dicts from Reddit's JSON response.
         Empty list if the request fails or Reddit returns no posts.
     """
+
     url = f"{REDDIT_JSON_URL}?limit={REDDIT_FETCH_LIMIT}"
     headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-    "Accept": "application/json, text/plain, */*",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Connection": "keep-alive",
-}
+        "accept": "application/json, text/plain, */*",
+        "accept-language": "en-US,en;q=0.9",
+        "dnt": "1",
+        "referer": "https://www.reddit.com/r/indiasocial/",
+        "sec-ch-ua": '"Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Windows"',
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-origin",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36",
+    }
 
     try:
-        import time
-        time.sleep(2)
-        session = requests.Session()
-        session.headers.update(headers)
-        response = session.get(url, timeout=REQUEST_TIMEOUT)
+        response = curl_requests.get(
+            url,
+            headers=headers,
+            impersonate="chrome116",   # TLS fingerprint of Chrome 116
+            timeout=REQUEST_TIMEOUT,
+        )
 
         if response.status_code != 200:
             logger.error(
                 f"Reddit returned HTTP {response.status_code}. "
-                f"URL: {url} | Body: {response.text[:200]}"
+                f"Body: {response.text[:300]}"
             )
             return []
 
@@ -77,21 +85,19 @@ def fetch_posts() -> list[dict]:
         children = data.get("data", {}).get("children", [])
 
         if not children:
-            logger.warning("Reddit returned 0 posts. Subreddit may be quiet or response malformed.")
+            logger.warning("Reddit returned 0 posts.")
             return []
-
         # Extract raw post data dicts
         posts = [child["data"] for child in children]
 
         # Filter: text posts only (is_self=True)
         text_posts = [p for p in posts if p.get("is_self", False)]
-        link_post_count = len(posts) - len(text_posts)
+        link_count = len(posts) - len(text_posts)
 
         logger.info(
-            f"Fetched {len(posts)} posts from Reddit. "
-            f"Text posts: {len(text_posts)} | Link posts skipped: {link_post_count}"
+            f"Fetched {len(posts)} posts. "
+            f"Text posts: {len(text_posts)} | Link posts skipped: {link_count}"
         )
-
         return text_posts
 
     except requests.exceptions.Timeout:
@@ -103,6 +109,7 @@ def fetch_posts() -> list[dict]:
     except (ValueError, KeyError) as e:
         logger.error(f"Failed to parse Reddit JSON response: {e}")
         return []
+    
 
 
 # ─────────────────────────────────────────────
