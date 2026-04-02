@@ -18,11 +18,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'            # caches pip packages between runs — faster
+          # cache: 'pip'            # caches pip packages between runs — faster
 
       - name: Install dependencies
-        run: |
-          pip install requests psycopg2-binary python-dotenv langdetect
+        run: pip install requests psycopg2-binary python-dotenv langdetect
 
       - name: Run fetch and store
         env:
