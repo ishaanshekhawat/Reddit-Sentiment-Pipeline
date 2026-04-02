@@ -1,0 +1,24 @@
+# HTTP requests — for fetching Reddit JSON endpoint
+requests==2.31.0
+
+# PostgreSQL driver
+psycopg2-binary==2.9.9
+
+# Environment variable management
+python-dotenv==1.0.0
+
+# Sentiment analysis model
+transformers==4.40.0
+
+# PyTorch — CPU only (no GPU on Oracle A1 ARM VM)
+# Install separately AFTER this file using the command below:
+# pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+# Language detection
+langdetect==1.0.9
+
+# Apache Airflow — core only (no extras needed for this project)
+apache-airflow==2.9.1
+
+# Airflow dependencies pinned to avoid conflicts
+# (Airflow manages its own constraints — see install note below)
