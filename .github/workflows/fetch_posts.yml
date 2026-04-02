@@ -21,7 +21,7 @@ jobs:
           # cache: 'pip'            # caches pip packages between runs — faster
 
       - name: Install dependencies
-        run: pip install requests psycopg2-binary python-dotenv langdetect
+        run: pip install curl_cffi requests psycopg2-binary python-dotenv langdetect
 
       - name: Run fetch and store
         env:
